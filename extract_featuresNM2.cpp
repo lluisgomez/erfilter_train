@@ -1,13 +1,11 @@
-#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/highgui.hpp"
 #include "opencv2/features2d/features2d.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/imgproc.hpp"
 
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-
-#include "opencv2/contrib/contrib.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -152,7 +150,7 @@ int GroundTruth(Mat& _originalImage)
               vector<vector<Point> > contours;
               vector<Point> contour_poly;
               vector<Vec4i> hierarchy;
-              findContours( region, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE, Point(0, 0) );
+              findContours( region, contours, hierarchy, RETR_TREE, CHAIN_APPROX_NONE, Point(0, 0) );
               //TODO check epsilon parameter of approxPolyDP (set empirically) : we want more precission if the region is very small because otherwise we'll loose all the convexities
               approxPolyDP( Mat(contours[0]), contour_poly, (float)min(rect.width,rect.height)/17, true ); 
 

@@ -1,13 +1,11 @@
-#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/highgui.hpp"
 #include "opencv2/features2d/features2d.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/imgproc.hpp"
 
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-
-#include "opencv2/contrib/contrib.hpp"
 
 #include <iostream>
 #include <fstream>

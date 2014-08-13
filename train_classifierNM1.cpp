@@ -1,68 +1,63 @@
 #include <cstdlib>
-#include "opencv/cv.h"
-#include "opencv/ml.h"
 #include <vector>
 #include <fstream>
 
+#include "opencv2/core/core.hpp"
+#include "opencv2/ml/ml.hpp"
+
 using namespace std;
 using namespace cv;
+using namespace cv::ml;
 
 int main(int argc, char** argv) {
 
 //Read the data from csv file
-CvMLData cvml;
-cvml.read_csv("char_datasetNM1.csv");
-//Indicate which column is the response
-cvml.set_response_idx(0);
+Ptr<TrainData> cvml = TrainData::loadFromCSV(string("char_datasetNM1.csv"),0,0);
 
 
 //Select 90% for the training 
-CvTrainTestSplit cvtts(0.9f, true);
-//Assign the division to the data
-cvml.set_train_test_split(&cvtts);
+cvml->setTrainTestSplitRatio(0.9, true);
 
-CvBoost boost;
+Ptr<Boost> boost;
 
 ifstream ifile("./trained_classifierNM1.xml");
 if (ifile) 
 {
 	//The file exists, so we don't want to train 
 	printf("Found trained_boost_char.xml file, remove it if you want to retrain with new data ... \n");
-	boost.load("./trained_classifierNM1.xml", "boost");
+	boost = StatModel::load<Boost>("./trained_classifierNM1.xml");
 } else {
 	//Train with 100 features
 	printf("Training ... \n");
-	boost.train(&cvml, CvBoostParams(CvBoost::REAL, 100, 0, 1, false, 0), false);
+	boost = StatModel::train<Boost>(cvml, Boost::Params(Boost::REAL, 100, 0.0, 1, false, Mat()));
 }
 
 //Calculate the test and train errors
-std::vector<float> train_responses, test_responses;
-float fl1 = boost.calc_error(&cvml,CV_TRAIN_ERROR,&train_responses);
-float fl2 = boost.calc_error(&cvml,CV_TEST_ERROR,&test_responses);
+Mat train_responses, test_responses;
+float fl1 = boost->calcError(cvml,false,train_responses);
+float fl2 = boost->calcError(cvml,true,test_responses);
 printf("Error train %f \n", fl1);
 printf("Error test %f \n", fl2);
 
 
 //Try a char
-static const float arr[] = {0,1.063830,0.083372,0.000000,2.000000};
-vector<float> sample (arr, arr + sizeof(arr) / sizeof(arr[0]) );
-float prediction = boost.predict( Mat(sample), Mat(), Range::all(), false, false );
-float votes      = boost.predict( Mat(sample), Mat(), Range::all(), false, true );
+Mat sample = (Mat_<float>(1,4) << 1.063830,0.083372,0.000000,2.000000);
+float prediction = boost->predict( sample, noArray(), 0 );
+float votes      = boost->predict( sample, noArray(), DTrees::PREDICT_SUM | StatModel::RAW_OUTPUT );
 
 printf("\n The char sample is predicted as: %f (with number of votes = %f)\n", prediction,votes);
 printf(" Class probability (using Logistic Correction) is P(r|character) = %f\n", (float)1-(float)1/(1+exp(-2*votes)));
 
 //Try a NONchar
-static const float arr2[] = {0,2.000000,0.235702,0.000000,2.000000};
-vector<float> sample2 (arr2, arr2 + sizeof(arr2) / sizeof(arr2[0]) );
-prediction = boost.predict( Mat(sample2), Mat(), Range::all(), false, false );
-votes      = boost.predict( Mat(sample2), Mat(), Range::all(), false, true );
+Mat sample2 = (Mat_<float>(1,4) << 2.000000,0.235702,0.000000,2.000000);
+prediction = boost->predict( Mat(sample2), noArray(), 0 );
+votes      = boost->predict( Mat(sample2), noArray(), DTrees::PREDICT_SUM | StatModel::RAW_OUTPUT );
 
 printf("\n The non_char sample is predicted as: %f (with number of votes = %f)\n", prediction,votes);
 printf(" Class probability (using Logistic Correction) is P(r|character) = %f\n\n", (float)1-(float)1/(1+exp(-2*votes)));
 
 // Save the trained classifier
-boost.save("./trained_classifierNM1.xml", "boost");
+boost->save(string("./trained_classifierNM1.xml"));
 
 return EXIT_SUCCESS;
 }
