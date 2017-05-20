@@ -15,21 +15,23 @@ int main(int argc, char** argv) {
 Ptr<TrainData> cvml = TrainData::loadFromCSV(string("char_datasetNM2.csv"),0,0);
 
 
-//Select 80% for the training 
+//Select 80% for the training
 cvml->setTrainTestSplitRatio(0.8, true);
 
 Ptr<Boost> boost;
 
 ifstream ifile("./trained_classifierNM2.xml");
-if (ifile) 
+if (ifile)
 {
-	//The file exists, so we don't want to train 
+	//The file exists, so we don't want to train
 	printf("Found trained_boost_char.xml file, remove it if you want to retrain with new data ... \n");
  	boost = StatModel::load<Boost>("./trained_classifierNM2.xml");
 } else {
 	//Train with 100 features
 	printf("Training ... \n");
- 	boost = StatModel::train<Boost>(cvml, Boost::Params(Boost::REAL, 100, 0.0, 1, false, Mat()));
+	boost = Boost::create();
+	boost->setWeightTrimRate(0.0);
+	boost->train(cvml);
 }
 
 //Calculate the test and train errors
